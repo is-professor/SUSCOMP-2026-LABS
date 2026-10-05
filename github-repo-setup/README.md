@@ -1,6 +1,6 @@
 # Setting up your version-controlled repo
 
-This is an absolute essential. Submission of all work and evidence of your achievement will be through a ‘portfolio submission’ via GitHub instance (this will be private to you, so you must invite ‘@anjeta’ as a collaborator).
+This is an absolute essential. Submission of all work and evidence of your achievement will be through a ‘portfolio submission’ via GitHub instance (this will be private to you, so you must invite ‘@is-professor’ as a collaborator).
 
 To set this up, go to ```https://github.com``` and log in to create an account if you don’t already have one.
 
@@ -15,7 +15,7 @@ It’ll take a while to ‘get comfy’ with how this works in practice, althoug
 
 Repos can generally be public or private. You can invite collaborators to either. **We’d ask that all your coursework remain private to avoid unwanted code sharing**.
 
-**Create a repo** and name it ```username-suscomp-2025-labs```. You should have a structure where there is a folder for each week’s lab that’s committed and pushed to your repo by the end of this lab. **Your repo in this case should be private**.
+**Create a repo** and name it ```username-suscomp-2026-labs```. You should have a structure where there is a folder for each week’s lab that’s committed and pushed to your repo by the end of this lab. **Your repo in this case should be private**.
 
 ## A word on security
 
