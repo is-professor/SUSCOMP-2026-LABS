@@ -4,7 +4,7 @@ The goal of today is to explore your own use and energy data demand of the digit
 
 ## Startup Task
 
-Start by setting up git as [per these instructions](https://github.com/anjeta/SUSCOMP-2025-LABS/tree/main/github-repo-setup).
+Start by setting up git as [per these instructions](https://github.com/is-professor/SUSCOMP-2026-LABS/tree/main/github-repo-setup).
 
 Spend a few minutes writing a list of the digital and electronic technology you use most in the home. You should aim for 3-5 technology-enabled appliances (i.e., with a digital processor and/or Internet or WiFi connected). This could include smart TVs, computers, games consoles, Wifi routers, smart speakers, etc.
 
@@ -19,7 +19,7 @@ You will need this to help you with the in-lab task this week.
 Time available: 1 hour.
 
 - Get started with markdown, see [how to use markdown](https://www.markdownguide.org/) - 10 minutes
-- Make sure you have an up-to-date copy of your coursework repo available (```git clone``` or ```git pull``` as needed to ensure you are up to date with the server). In the ‘week2-personal-co2-footprint’ folder, create a new markdown document called ```username-week2-labnotes.md``` with your markdown editor of choice. Replace ```username``` with your login ID (mine would be ```anjeta```). Create it inside your ```week2-personal-co2-footprint``` repository folder, i.e., the same folder as this file.
+- Make sure you have an up-to-date copy of your coursework repo available (```git clone``` or ```git pull``` as needed to ensure you are up to date with the server). In the ‘week2-personal-co2-footprint’ folder, create a new markdown document called ```username-week2-labnotes.md``` with your markdown editor of choice. Replace ```username``` with your Github login ID. Create it inside your ```week2-personal-co2-footprint``` repository folder, i.e., the same folder as this file.
 
 1. For each photo, and while you have time in the lab, put a subheading that describes it.
 2. Add a little detail on how often you use it and for how long (estimate hours per day, week, and year)
