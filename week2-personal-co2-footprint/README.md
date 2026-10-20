@@ -25,10 +25,11 @@ Time available: 1 hour.
 2. Add a little detail on how often you use it and for how long (estimate hours per day, week, and year)
 3. Using your photos and the resources below, look up how much active power the device uses when in use, and add this to a markdown table under the appropriate heading.
 4. If the device has a different power level when not in use (e.g., on standby or 0 W if powered off when not in use), find out what this is and add it to the table.
-5. Finally, add a row that calculates the number of kilowatt/hours (divide total in Watts by 1,000 and multiply by the number of hours of use) based on your estimate of use per day, week, and year. For example, if you had a smart speaker that takes 5 W all year round, this would be: 5 × 365 × 24 / 1000 = 43.8 kWh
+5. Finally, add columns to your table (kWh daily, kWh weekly, kWh yearly, as in the example below) that calculate the number of kilowatt-hours (divide total in Watts by 1,000 and multiply by the number of hours of use) based on your estimate of use per day, week, and year. For example, if you had a smart speaker that takes 5 W all year round, this would be: 5 × 365 × 24 / 1000 = 43.8 kWh
 
    - i.e., 365 days in a year by 24 hours per day to get total hours used, multiplied by the power demand in Watts to get Watt-hours
-   - divide by 1000 to get kilowatt hours
+   - divide by 1000 to get kilowatt-hours
+   - *Optional:* to turn energy into a CO2 footprint, multiply the yearly kWh by the carbon intensity of the Slovenian electricity grid (in g CO2e/kWh) and cite the source you used (e.g., EEA or Electricity Maps)
 
 6. The task should be time-bound, i.e., you should not spend much more than 40 minutes of concentrated time on this task. I would expect you to find and calculate the power for 3-5 assets in detail within this time.
 7. Add a subsection ```## Reflections``` with a short paragraph on your thoughts on how the various assets compare with one another. Which uses the most energy, which uses the least, and how does this relate to the use time or overall powered-on time
@@ -57,7 +58,7 @@ Now, let's use this information to estimate weekly and yearly consumption:
 
 | Device      | Active power when in use | Power in idle mode | Power when turned off | kWh daily | kWh weekly | kWh yearly |
 | ----------- | ------------------------ | ------------------ | --------------------- | --------- | ---------- | ---------- |
-| iPhone 15   | 2.48 W                   | 1 W                | 0 W                   | 0.015     | 0.107      | 5.573      |
+| iPhone 15   | 2.48 W                   | 0.13 W             | 0 W                   | 0.015     | 0.107      | 5.573      |
 
 
 Comparison with other at-home appliances based on the yearly consumption:
@@ -89,12 +90,12 @@ We will not worry about the cloud computing data centres, AI workloads, or other
 Here are some useful digital resources to help.
 
 - [Typical home appliance energy demand summary sheet](https://www.nea.org.uk/wp-content/uploads/2022/03/Electricity-Consumption-Around-the-Home.pdf)
-- [Household energy and transportation fuel consumption in Slovenia](https://kazalci.arso.gov.si/en/content/household-energy-and-transportation-fuel-consumption-2?utm_source=chatgpt.com)
+- [Household energy and transportation fuel consumption in Slovenia](https://kazalci.arso.gov.si/en/content/household-energy-and-transportation-fuel-consumption-2)
 - Climate Savers Computing Initiative on [Wikipedia](https://en.wikipedia.org/wiki/Climate_Savers_Computing_Initiative)
 - [What appliances use the most electricity](https://energysavingtrust.org.uk/top-five-energy-consuming-home-appliances/)?
 - Energy ratings on [energysavings trust](https://energysavingtrust.org.uk/advice/home-appliances/)
-- What is a kilowatt/hour (kWh)? ([YouTube](https://www.youtube.com/watch?v=SMPhh8gT_1E))
-- Calculating your personal footprint using the [Consumer Footprint Calculator](https://eplca.jrc.ec.europa.eu/ConsumerFootprint.html?utm_source=chatgpt.com)
+- What is a kilowatt-hour (kWh)? ([YouTube](https://www.youtube.com/watch?v=SMPhh8gT_1E))
+- Calculating your personal footprint using the [Consumer Footprint Calculator](https://eplca.jrc.ec.europa.eu/ConsumerFootprint.html)
 - European Commission's [Appliances and Energy Labels](https://energy-efficient-products.ec.europa.eu/product-list_en)
 
 ## Acknowledgement
