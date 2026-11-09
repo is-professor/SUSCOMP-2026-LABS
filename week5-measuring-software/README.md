@@ -1,127 +1,188 @@
 # Measuring Software Energy Consumption
 
-The goal for this lab excercise is to learn how to take energy measurements associated with running specific software and to explore the effect of offloading computation from the CPU to the GPU. We’ll be indirectly using the Intel RAPL for Linux and Power Metrics for MacOS to report energy consumtion from the CPU. Unfortunately, this will not work on Windows machines so please use the lab machine or pair up with someone who has a Linux or MacOS on their personal laptop machine.
+The goal of this lab is to learn how to measure the energy used by running a piece of
+software, and to see how much the *way* software is written, and *where* it runs (CPU or
+GPU), changes that energy. You can do it on your own laptop: Apple Silicon Mac, Windows or
+Linux, Intel or AMD.
 
-Further note that you will be able to run GPU test only on the lab machine or if your machine has an Intel graphics. Keep in mind that Intel graphics has a considerably lower power draw than a dedicated GPU found in most gaming machines and high end AI or graphics machines. Recall, that processors increasingly have other co-processors, such as Intel's NPU, for accelerating operations for machine learning - which also might perform specialist parallel instructions with good compute/energy performance.  *You should keep this in mind when generalising from your findings!*
+## Background: what can your computer tell you?
+
+No computer measures "the energy of my program" directly. You will use a **meter** that reports
+power for some part of the machine, and you must say which part it covers:
+
+| Your machine | Meter (`--meter`) | What it covers | Notes |
+|--------------|-------------------|----------------|-------|
+| Mac with Apple Silicon (M1–M5) | `macmon` (default) | CPU + GPU + Neural Engine (the "SoC") | Install with `brew install macmon`. No sudo needed. |
+| Linux, Intel or AMD | `rapl` (default) | CPU package | Needs `sudo` (see below). Not available in VMs, WSL or containers. |
+| Windows 11, Intel or AMD | `codecarbon` (default) | CPU | Uses real counters when Windows provides them, otherwise an **estimate**. Check the `mode` column. |
+| Any laptop | `battery` | The whole laptop, including the screen | Only on battery power: unplug the charger. Less precise, so use 30 s+ runs. |
+| Linux with an NVIDIA GPU | `rapl+nvidia` | CPU package + GPU board | For Part B. Needs `sudo` like `rapl`. `rapl` alone does **not** see the GPU. |
+| Any machine with an NVIDIA GPU | `nvidia` | GPU board only | From the NVIDIA driver; no sudo needed. |
+
+Some meters **measure** and some **estimate**. CodeCarbon, for example, falls back to estimating
+power from the CPU model and load when it can't read a counter. Part of this lab is finding out
+which you have.
 
 ## Taking good measurements
 
-We will take a snapshot of the energy use of the CPU/GPU from the time we start measuring to the time the task is complete.
-
-1. This could catch any computation going on, not just your code, so we should aim for **isolation**, i.e. trying not to get data that's confounded by other software and hardware running at the same time.
-2. Ideally, recognise that the measurement framework may add additional **overhead** (hopefully in this case it should be relatively constant for all tests).
-3. Understanding how much is **missed** by what we are able to measure (for example, the scripts we will use measure the CPU/GPU, but not the memory, I/O subsystems or anything else that makes up the total system energy).
-4. **Repeatable** and **representative** test selection.  We should run tests more than once and take an average (arithmetic mean) and standard deviation.  We should report each run and the average. Run **each test 5 times**, providing **all** of the readings in your report markdown file.
-5. You should do a 'warmup' run before taking your measurements, not least because this task **downloads a large data file at startup**.  Be careful **not to include** the download and data loading time in your benchmark results.  **Take care also to remove or not include the data file in your git repo!**
-
-We're going to use a test which forecasts data points from a [linear regression](https://www.geeksforgeeks.org/ml-linear-regression/) using python for [this task](https://uxlfoundation.github.io/scikit-learn-intelex/latest/samples/linear_regression.html) which utilises the [`scitkit-learn`](https://scikit-learn.org/stable/) package and GPU extension by Intel).
-
-## Understanding Intel RAPL channels
-
-For Linux machines, the profiler script will give you a block of output like this:
-
-```
-Performance Metrics:
-Execution time: 6402.042 ms (6402042057 ns)
-CPU time (user): 16.690 seconds
-CPU time (system): 0.680 seconds
-
-CPU Power Usage (RAPL):
-  intel-rapl:0: 133020839 µJ (133.021 J)
-  intel-rapl:0:0: 123113210 µJ (123.113 J)
-  intel-rapl:0:1: 7812 µJ (0.008 J)
-```
-
-If you're curious, read about `user` and `system` time in this answer to [this stackoverflow question](https://stackoverflow.com/questions/556405/what-do-real-user-and-sys-mean-in-the-output-of-time1).
-
-Note that the `intel-rapl:` corresponds to different MSRs (module specific registers) on your Intel processor.  These are normally:
-
-Channel | Value | Meaning
-----|----|----
-`intel-rapl:0:`| 133020839 µJ (133.021 J)| Overall 'package' energy (all parts of the CPU package, including CPU and GPU)
-`intel-rapl:0:0:` | 123113210 µJ (123.113 J) | Channel 0 is the 'CPU cores' part of the package
-`intel-rapl:0:1:` | 7812 µJ (0.008 J) | "Normally" the GPU
-
-Note that 0.008 Joules is tiny, so probably more significant in interpreting your results is the difference between the package and CPU channels and estimating 'what is saved' by the GPU by taking workload from the processor between test variants. The energy saved should really be *not just the difference in load*, but *also the reduced execution time*.  **You'll need to take this into account and explain your working out in your markdown report.**
+1. **Isolation:** close other applications (browser, video calls, cloud sync). Keep the laptop on
+   the same power setting for all runs.
+2. **Baseline:** measure the machine doing nothing (`idle`), so you can tell how much extra
+   energy your program used.
+3. **Long enough runs:** each run lasts 30 s, because meters sample about once a second.
+   The workload counts how much work it completed in that time.
+4. **Repeats:** run each test **5 times**, alternating between tests rather than doing all
+   runs of one test together. Report every run, the mean and the standard deviation.
+5. **Warm-up:** do one unmeasured run first; the first run loads libraries and is slower.
+6. **Limits:** write down what your meter cannot see.
 
 ## Task
 
-Time available: 1 hour:
+Time available: 1 hour. In the `week5-measuring-software` folder, create
+`username-week5-labnotes.md`.
 
-Make sure you have an up to date copy of your coursework repo available.  In the '`week5`' folder create a new markdown document called `username-week5-labnotes.md`.
+### 1. Set up
 
-1. Create and activate a Python environment running the following commands:
+```bash
+python3 -m venv .venv
+source .venv/bin/activate          # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+```
 
-	```bash
-	conda create -n "suscomp-25" python=3.12.10
-	conda activate "suscomp-25"
-	```
+On Linux without an NVIDIA GPU, install the smaller CPU-only PyTorch first:
+`pip install torch==2.9.1 --index-url https://download.pytorch.org/whl/cpu`.
 
-	or
+Check that everything runs, without measuring yet:
 
-	```bash
-	pyenv install 3.12.10
-	pyenv virtualenv 3.12.10 "suscomp-25"
-	pyenv activate "suscomp-25"
-	```
+```bash
+python workload.py numpy-matmul --seconds 5
+```
 
-2. Install the dependencies from [requirements.txt]():
+### 2. Choose your meter
 
-	```bash
-	pip install -r requirements.txt
-	```bash
-	
-3. Download the [profiler.py](https://github.com/anjeta/SUSCOMP-2025-LABS/blob/main/week5-measuring-software/profiler.py) script.  This is a python script and **needs to be executable** - you may need to change it's file permissions (to do so, run `chmod u+x profiler.py` in the terminal shell)
+Run a short idle test with the default meter for your machine:
 
-4. Download the two test files [test-cpu.py](https://github.com/anjeta/SUSCOMP-2025-LABS/blob/main/week5-measuring-software/test-cpu.py) and [test-gpu.py](https://github.com/anjeta/SUSCOMP-2025-LABS/blob/main/week5-measuring-software/test-gpu.py).  This is the same code, the only difference being that with `test-cpu.py` all the calculation is done on the CPU cores.
+```bash
+python measure.py --label idle -- python workload.py idle --seconds 10
+```
 
-5. Run the test case to 'warm up' the system (*load packages and data files for the first time*).
+On Linux, RAPL needs root, so use your environment's Python explicitly:
 
-	```bash
-	python test-cpu.py
-	```
-	
-6. Run each test case at least 5 times, noting down the test case, energy and time taken for each.  e.g. using:
+```bash
+sudo "$(which python)" measure.py --label idle -- "$(which python)" workload.py idle --seconds 10
+```
 
-	```bash
-	sudo ./profiler.py "python test-cpu.py"
-	```
-	**Important note: the profiler.py swallows the output from the task, so it's recommend to run the task to verify it's running correctly, before running under the energy profiler.  Especially, if the task completion time and energy used is suspiciously small!**
+`measure.py` prints the energy and adds a row to `runs.csv`. Look at the `scope` and `mode`
+columns: what does your meter measure, and is it a measurement or an estimate?
 
-7. Document your experiment *in markdown format*, using markdown tables.  Add an *introductory paragraph* on what you plan to measure and your 'method statement' of how you've conducted your tests.  *Take care to explain how you are calculating the energy saved.*
+### 3. Part A – Does the way software is written matter? (everyone)
 
-8. For each test case, add a subsection with the goal of the test, *the command line* you've used and a table with the results.
+The same matrix multiplication, written as pure Python loops and with NumPy. Run each 5 times,
+alternating, plus 5 idle runs:
 
-9. The table should have the results of each test run, how much time it took and how many Joules of energy and total Watt/hours. Additionally, calculate the total power consumtion of running each of the scripts in each test run. You can convert Joules to Watts [using a converter](https://www.rapidtables.com/calc/electric/Joule_to_Watt_Calculator.html), or by hand:
+```bash
+python measure.py --label idle   -- python workload.py idle
+python measure.py --label python -- python workload.py python-matmul
+python measure.py --label numpy  -- python workload.py numpy-matmul
+```
 
-   Recall, the power P in watts (W) is equal to the energy E in joules (J), divided by the time period t in seconds (s) - *take care with your units!!*
-   
-   $$
-   P = \frac{E}{t}
-   $$
+Sudo on Linux:
 
-10. Finish the table with the average time taken and standard deviation.  You could use a spreadsheet like excel, or a stats package like R (see [getting started reference](https://education.rstudio.com/learn/beginner/))
+```bash
+sudo "$(which python)" measure.py --label idle   -- sudo "$(which python)" workload.py idle
+sudo "$(which python)" measure.py --label python -- sudo "$(which python)" workload.py python-matmul
+sudo "$(which python)" measure.py --label numpy  -- sudo "$(which python)" workload.py numpy-matmul
+```
 
-11. Add a subsection called `## Reflections` which summarises what you've found, and any personal observations on the number of Watt's associated with the computations.  How much energy was saved by offloading from CPU to GPU and speeding up the task?  If you ran this task for an entire day, week, month or year how many kWh would be used for CPU and GPU variants?
+### 4. Part B – Does offloading to the GPU help? (if you have a GPU)
 
-Don't forget to `git add` your new file, `commit` and `push` to the server at least at the end of the task.  **Take care not to add the 'data' folder to your git repository - it contains an enormous data file that you don't need to keep!**  You can remove it with `git rm -r data`.
+Use `mps` on an Apple Silicon Mac, `cuda` with an NVIDIA GPU, `xpu` with a supported Intel GPU:
+
+```bash
+python measure.py --label torch-cpu -- python workload.py torch-matmul --device cpu
+python measure.py --label torch-gpu -- python workload.py torch-matmul --device mps
+```
+
+On a Mac, `macmon` already covers both CPU and GPU. With an NVIDIA GPU, a CPU meter misses the
+GPU entirely, so measure Part B (including an idle run) with both:
+
+```bash
+sudo "$(which python)" measure.py --meter rapl+nvidia --gpus 0 --label idle      -- "$(which python)" workload.py idle
+sudo "$(which python)" measure.py --meter rapl+nvidia --gpus 0 --label torch-cpu -- "$(which python)" workload.py torch-matmul --device cpu
+sudo "$(which python)" measure.py --meter rapl+nvidia --gpus 0 --label torch-gpu -- "$(which python)" workload.py torch-matmul --device cuda
+```
+
+`--gpus 0` measures only the GPU the workload uses (`nvidia-smi` lists them). On a shared
+machine, check with `nvidia-smi` that nobody else is using that GPU. On Windows, use
+`--meter nvidia` for the GPU and `--meter codecarbon` for the CPU, and add the two.
+
+No GPU? Pair up with someone who has one, or skip to Part C.
+
+### 5. Part C – Do two meters agree?
+
+Repeat Part A with a second meter: `--meter battery` (unplug the charger) or `--meter codecarbon`.
+The meters cover different parts of the machine, so they *should* disagree. Your job is to
+explain by how much and why.
+
+CodeCarbon meter:
+
+```bash
+python measure.py --label idle --meter codecarbon -- python workload.py idle
+python measure.py --label python --meter codecarbon -- python workload.py python-matmul
+python measure.py --label numpy --meter codecarbon  -- python workload.py numpy-matmul
+```
+
+Battery meter:
+
+```bash
+python measure.py --label idle --meter battery -- python workload.py idle
+python measure.py --label python --meter battery -- python workload.py python-matmul
+python measure.py --label numpy --meter battery  -- python workload.py numpy-matmul
+```
+
+### 6. Analyse and write up
+
+```bash
+python analyse.py runs.csv --baseline python
+```
+
+This prints markdown tables of every run, the means and SDs, and the **energy per GFLOP**
+(1 GFLOP = one billion floating-point operations): energy divided by work done. Use it as the
+fair comparison, because the tests do very different amounts of work in 30 s.
+
+Your report needs:
+
+1. **Introduction and method:** what you measured, on which machine (model, CPU, OS), with which
+   meter(s), and how you kept measurements clean.
+2. **A subsection per test:** goal, the exact command, the results table.
+3. **Worked example:** calculate one row by hand. *P* = *E* / *t* (watts = joules ÷ seconds);
+   1 Wh = 3 600 J; energy above idle = *E* − *P*(idle) × *t*.
+4. **Comparison:** how much less energy per GFLOP did NumPy (and the GPU, if you had one) use? Was
+   that because power went down, or because the work finished faster?
+5. **Scaling up:** suppose your machine has to do 100 TFLOP (100 000 GFLOP) of this work per year.
+   How many kWh would each version need, and how long would it run?
+6. **`## Reflections`:** what surprised you, how the two meters compared, which meter you trust and
+   why, and what none of them can see (the screen? memory? the network? the charger?).
+
+Commit and push your notes **and** `runs.csv`.
 
 ## Learning outcomes
-* You should have an appreciation of how energy varies with CPU vs. GPU computation.
-* Reinforcing your expirimental method, i.e. how to take measurements, calculate a difference in energy saved and report them in a systematic way.
-* A 'ready reckoning' of the bounds for energy saving due to reducing load on the CPU by shifting workloads to the GPU.
-* An appreciation of how efficient GPU cores are for offloading parallel mathematical tasks (e.g. vector matrix operations).
+
+- You can take repeatable software energy measurements and report them with mean, SD and a method.
+- You understand that energy = power × time, so faster software usually saves energy even when its
+  power is higher.
+- You can estimate how much energy better code or a GPU saves, and scale it up to a year.
+- You know that different meters measure different parts of the system, and the difference
+  between a measurement and an estimate.
 
 ## Starting points
 
-Here are some useful digital resources to help.
-
-- [About Python virtual environments](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/#create-and-use-virtual-environments)
-
-<!-- ## Going further
-
-* [https://pawseysc.github.io/sc20-gpu-offloading/](https://pawseysc.github.io/sc20-gpu-offloading/) -->
+- [macmon](https://github.com/vladkens/macmon) – power monitor for Apple Silicon
+- [CodeCarbon methodology](https://docs.codecarbon.io/latest/explanation/methodology/) – how it measures or estimates
+- [RAPL in CodeCarbon's docs](https://docs.codecarbon.io/latest/explanation/rapl/) – what the Linux counters cover
+- [Python virtual environments](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/)
 
 ## Acknowledgement
 
-This lab exercise is made based on the materials from the Sustainable Computing course held by Adrian Friday, a Professor of Computing and Sustainability at Lancaster University.
+This lab exercise is made based on the materials from the Sustainable Computing course held by
+Adrian Friday, a Professor of Computing and Sustainability at Lancaster University.
