@@ -32,6 +32,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tempfile
 import threading
 import time
 from datetime import datetime
@@ -221,16 +222,25 @@ def run_macmon(cmd, interval):
 
 def run_codecarbon(cmd, interval):
     try:
+        import codecarbon
         from codecarbon import OfflineEmissionsTracker
     except ImportError:
         raise SystemExit("pip install codecarbon")
+    # CODECARBON_LOG_LEVEL=warning (or debug) shows why a run was not measured.
     tracker = OfflineEmissionsTracker(country_iso_code="SVN", measure_power_secs=interval,
                                       tracking_mode="machine", save_to_file=False,
-                                      log_level="error")
+                                      allow_multiple_runs=True,
+                                      log_level=os.environ.get("CODECARBON_LOG_LEVEL", "error"))
     tracker.start()
     seconds, proc = run_command(cmd)
     tracker.stop()
-    d = tracker.final_emissions_data
+    d = getattr(tracker, "final_emissions_data", None)
+    if d is None:
+        # stop() only stores results when start() really started measuring.
+        raise SystemExit(
+            f"CodeCarbon {codecarbon.__version__} did not measure this run. Run again with "
+            "CODECARBON_LOG_LEVEL=warning set to see why. A common cause is a leftover lock file: "
+            f"delete {os.path.join(tempfile.gettempdir(), '.codecarbon.lock')} and retry.")
     cpu_modes = [type(h).__name__ + ":" + str(getattr(h, "_mode", "?"))
                  for h in getattr(tracker, "_hardware", []) if type(h).__name__ == "CPU"]
     kwh = {"cpu": d.cpu_energy, "gpu": d.gpu_energy, "ram": d.ram_energy}
